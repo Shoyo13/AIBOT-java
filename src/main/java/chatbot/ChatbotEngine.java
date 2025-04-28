@@ -4,6 +4,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import javax.swing.Timer;
+
 public class ChatbotEngine {
     private final FAQAnswerer faqAnswerer;
     private final UserQueryProcessor queryProcessor;
@@ -23,20 +25,29 @@ public class ChatbotEngine {
         threadPool.submit(() -> {
             messageConsumer.accept(new Message("User", userInput));
 
-            String faqResponse = faqAnswerer.findAnswer(userInput);
-            if (!faqResponse.contains("Sorry")) {
-                messageConsumer.accept(new Message("Bot", faqResponse));
-            } else {
-                queryProcessor.processQueryWithNLP(userInput)
-                        .thenAccept(nlpResponse -> {
-                            messageConsumer.accept(new Message("Bot", nlpResponse));
-                        })
-                        .exceptionally(e -> {
-                            messageConsumer.accept(new Message("Bot", "Sorry, I encountered an error processing your request."));
-                            e.printStackTrace();
-                            return null;
-                        });
-            }
+            // ✅ Show "Bot is typing..." first
+            Message typingMessage = new Message("Bot", "Bot is typing...");
+            messageConsumer.accept(typingMessage);
+
+            Timer timer = new Timer(1500, e -> {
+                String faqResponse = faqAnswerer.findAnswer(userInput);
+
+                if (!faqResponse.contains("Sorry")) {
+                    messageConsumer.accept(new Message("Bot", faqResponse));
+                } else {
+                    queryProcessor.processQueryWithNLP(userInput)
+                            .thenAccept(nlpResponse -> {
+                                messageConsumer.accept(new Message("Bot", nlpResponse));
+                            })
+                            .exceptionally(ex -> {
+                                messageConsumer.accept(new Message("Bot", "Sorry, I encountered an error processing your request."));
+                                ex.printStackTrace();
+                                return null;
+                            });
+                }
+            });
+            timer.setRepeats(false);
+            timer.start();
         });
     }
 

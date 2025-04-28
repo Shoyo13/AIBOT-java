@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,9 +15,11 @@ import org.json.simple.parser.ParseException;
 
 public class FAQAnswerer {
     private List<JSONObject> faqs;
+    private Map<String, String> keywordToQuestion;
 
     public FAQAnswerer(String filePath) {
         loadFAQs(filePath);
+        setupKeywordMappings();
     }
 
     private void loadFAQs(String filePath) {
@@ -35,39 +38,58 @@ public class FAQAnswerer {
         }
     }
 
-    // Matching method (keep same)
+    private void setupKeywordMappings() {
+        keywordToQuestion = new HashMap<>();
+        keywordToQuestion.put("Shipping Costs", "What are your shipping costs?");
+        keywordToQuestion.put("Shipping Time", "How long does shipping take?");
+        keywordToQuestion.put("Reset Password", "How do I reset my password?");
+        keywordToQuestion.put("Return Policy", "What is your return policy?");
+        keywordToQuestion.put("Payment Methods", "What payment methods are accepted?");
+        keywordToQuestion.put("Track Order", "How can I track my order?");
+        keywordToQuestion.put("Contact Support", "How can I contact support?");
+    }
+
     public String findAnswer(String query) {
         String queryLower = query.toLowerCase();
-        List<JSONObject> matchingFAQs = faqs.stream()
-                .filter(faq -> {
-                    String question = ((String) faq.get("question")).toLowerCase();
-                    String topic = ((String) faq.get("topic")).toLowerCase();
-                    return question.contains(queryLower) || topic.contains(queryLower);
-                })
-                .collect(Collectors.toList());
-    
-        if (!matchingFAQs.isEmpty()) {
-            return (String) matchingFAQs.get(0).get("answer");
-        } else {
-            return "Sorry, I don't have an answer to that question.";
-        }
-    }
-    
+        String mappedQuery = keywordToQuestion.getOrDefault(query, query);
+        String mappedQueryLower = mappedQuery.toLowerCase();
+        String[] queryWords = mappedQueryLower.split("\\s+");
 
-    private boolean containsAnyWord(String text, String query) {
-        String[] queryWords = query.split("\\s+");
-        for (String word : queryWords) {
-            if (text.contains(word)) {
-                return true;
+        JSONObject bestMatch = null;
+        int highestScore = 0;
+
+        for (JSONObject faq : faqs) {
+            String question = ((String) faq.get("question")).toLowerCase();
+            String topic = ((String) faq.get("topic")).toLowerCase();
+            String combined = question + " " + topic;
+
+            int score = 0;
+            for (String word : queryWords) {
+                if (combined.contains(word)) {
+                    score++;
+                }
+            }
+
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatch = faq;
             }
         }
-        return false;
+
+        if (bestMatch != null && highestScore > 0) {
+            return (String) bestMatch.get("answer");
+        } else {
+            return "Sorry, I am not configured to answer that question right now.";
+        }
     }
 
     public List<String> getFAQsByTopic(String topic) {
-        return faqs.stream()
-                .filter(faq -> ((String) faq.get("topic")).equalsIgnoreCase(topic))
-                .map(faq -> (String) faq.get("question"))
-                .collect(Collectors.toList());
+        List<String> faqsByTopic = new ArrayList<>();
+        for (JSONObject faq : faqs) {
+            if (((String) faq.get("topic")).equalsIgnoreCase(topic)) {
+                faqsByTopic.add((String) faq.get("question"));
+            }
+        }
+        return faqsByTopic;
     }
 }
