@@ -1,0 +1,9 @@
+chatbot\ChatbotEngine.class
+chatbot\ui\MessageBubble$1.class
+chatbot\Message.class
+chatbot\ui\ChatbotUI.class
+chatbot\UserQueryProcessor.class
+chatbot\ui\ChatbotUI$2.class
+chatbot\ui\MessageBubble.class
+chatbot\FAQAnswerer.class
+chatbot\ui\ChatbotUI$1.class

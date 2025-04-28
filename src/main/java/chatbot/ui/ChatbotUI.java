@@ -4,8 +4,6 @@ import chatbot.ChatbotEngine;
 import chatbot.Message;
 
 import javax.swing.*;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatbotUI extends JFrame {
-    private JTextArea chatArea;
     private JTextField inputField;
     private JButton sendButton;
     private ChatbotEngine chatbotEngine;
@@ -40,7 +37,7 @@ public class ChatbotUI extends JFrame {
         inputPanel.add(sendButton, BorderLayout.EAST);
         add(inputPanel, BorderLayout.SOUTH);
 
-        chatbotEngine = new ChatbotEngine("src/data/faqs.json", this::displayMessage);
+        chatbotEngine = new ChatbotEngine("faqs.json", this::displayMessage);
 
         sendButton.addActionListener(new ActionListener() {
             @Override
@@ -71,7 +68,6 @@ public class ChatbotUI extends JFrame {
             chatPanel.revalidate();
             chatPanel.repaint();
 
-            // Scroll to the bottom
             JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
             verticalScrollBar.setValue(verticalScrollBar.getMaximum());
         });
